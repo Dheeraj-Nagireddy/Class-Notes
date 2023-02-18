@@ -35,4 +35,9 @@ git push
 copy the remote url of the repo
 and paste in terminal
 
+# TO pull from main branch 
 
+git pull origin main 
+
+# To delete branch
+git branch -d "branch name"
