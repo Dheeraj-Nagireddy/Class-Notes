@@ -1,0 +1,40 @@
+cd /opt
+
+ 41  yum install java-1.8.0 -y
+   30  sudo wget -O nexus.tar.gz https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+   31  tar -xvzf nexus.tar.gz
+   32  ls
+   33  adduser nexus
+   34  chown -R nexus:nexus nexus-3.51.0-01/
+   35  chown -R nexus:nexus sonatype-work/
+   36  rm -rf nexus-latest-bundle.zip
+   37  cd nexus-3.51.0-01/bin/
+   38  RUN_AS_USER=nexus ./nexus start
+
+  
+   43  RUN_AS_USER=nexus ./nexus status
+   44  history
+Make sure to add authentication of nexus in settings.xml file in Jenkins master and slave nodes
+
+follow 38 or below steps
+
+sudo vi /etc/systemd/system/nexus.service
+
+[Unit]
+Description=nexus service
+After=network.target
+
+[Service]
+Type=forking
+LimitNOFILE=65536
+User=nexus
+Group=nexus
+ExecStart=/app/nexus/bin/nexus start
+ExecStop=/app/nexus/bin/nexus stop
+User=nexus
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+
+systemctl start nexus

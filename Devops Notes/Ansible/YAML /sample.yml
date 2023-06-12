@@ -1,0 +1,14 @@
+---
+- hosts: Redhat
+  tasks: 
+    - name: Creating User
+      user: name=Raj state=present
+    - name: Installing Java
+      yum: name=Java state=present
+    - name: Installing 
+      yum : name={{item}} state=present
+      with_items:
+        - git
+        - httpd
+        - maven
+        - docker

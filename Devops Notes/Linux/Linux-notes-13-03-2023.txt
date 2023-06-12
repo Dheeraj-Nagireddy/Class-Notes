@@ -1,0 +1,278 @@
+14th Mar, 2023
+
+Linux Vs Windows
+
+1. Open Source 
+
+2. Security 
+     - CLI (command line interface) , in Linux by default GUI is disabled
+     - Softwares Download (user permissions are so strict or limited in linux)
+
+     client OS - WINDOWS (the laptop org provides for emplooyee)
+     server OS - LINUX (this is where our applications are hosted)
+
+15th mar, 2023
+
+Distributions in Linux
+
+Windows - 11, 10, 8, 7 2000, 98 .....
+
+Linux - 
+
+UNIX (Open Source code)
+Amazon Linux
+RedHat Linux
+CentOS
+Ubuntu
+Fedora
+Debian
+SUSE
+Solaris
+IBMaix
+HP 
+Oracle
+ck
+How to che the linux dirto?
+cat /etc/os-release
+PRETTY_NAME="Amazon Linux 2"
+
+
+Basic Commands
+
+ifconfig    - pvt IP
+curl ifconfig.me   - public IP
+clear - clear the screen
+cat - read the file
+whoami  - which user we are currently working as
+pwd   - present working Dir
+ls - list contents of current dir
+cd  - change directory
+sudo -i - switch to root (sudo su -)
+
+
+Directory Structure in Linux
+
+/
+home    root    etc   dev   boot   bin   sbin   tmp   var   usr  mnt   opt    ..... 
+test1   test2
+test3   test4
+
+
+Path Strategy
+
+1. go to test2
+   cd /root/test2               ; pwd - /root/test2
+
+2. go to test3
+   a. cd /home/test1/test3       ; pwd - /home/test1/test3     (absolute path)
+
+   b. cd ../../home/test1/test3  ; pwd - /home/test1/test3     (relative path)
+
+   c. cd /                       ; pwd - /   
+      cd home                    ; pwd - /home
+      cd test1                   ; pwd - /home/test1
+      cd test3                   ; pwd - /home/test1/test3  
+
+/    - base dir (:C/ Drive in windows)
+home - Everyuser has a deafult home dir in "/home" with name same as username (Desktop of user)
+root - home dir of root user
+etc  - all the system settings and application settings are stored here 
+dev  - all the devices connected to my server
+boot - kerneel and boot time requirements
+bin  - Binaries (programs of the commands)
+sbin - system Binaries
+tmp  - system purpose (auto-deletion of conents not used for over 30 days)
+
+
+Creating Files & Directories
+User Management
+Managing Applications
+Security Groups
+Process management
+
+16th Mar, 2023
+
+Creating Files and Directories
+
+Creating Directories
+
+mkdir <dir-name>
+rmdir - removes empty dir
+rm -rf dir - (r-recursively, f-forcefully)
+
+Creating files
+
+1. touch
+2. cat
+3. vi editor
+   vim
+   nano
+
+1. touch file  - create an empty file
+2. cat   file  - read the conents
+   cat > file  - to write the data, also over-writes the existing data
+   cat >> file - to append the data
+
+3. vi editor
+   works on three modes
+   a. Escape mode  (default mode)          
+   b. Insert mode  (editing mode)          ---INSERT--- 
+   c. Command mode (save/discard changes)  :
+
+   Insert Mode - i,I,a,A,o,O
+   i - start insterting from the current position
+   a - start insterting from the one step current position
+   I - start insterting from the beginning of the line
+   A - start insterting from the ending of the line
+   o - Insert a new line below the current line
+   O - Insert a new line above the current line  
+
+   Escape Mode - Esc key
+   G  - go to last line
+   gg - go to first line
+   yy - copy the line
+   p  - paste the copied line
+   dd - delete the current line
+   u  - undo the previous action
+   ctrl+r - re-do the previous action  
+
+   Command Mode - :
+   :wq!   (:-command mode, w-write/save, q-quit/close, !-forcefully)
+   :q!
+   :wq
+   :q
+   :set nu (give a temporary numbering to the lines )
+   :se nonu
+
+   cp file1 file2 (flie1- path of source file , file2- pathe of dest file )
+   mv file1 file2 (same as above , and alos rename the file)
+
+
+17th Mar, 2023
+
+User management
+
+useradd user - create a new user
+  - uid
+  - username
+  - gid
+  - groupname
+  - home dir
+
+id user      - check whether the user is present
+passwd user  - to set the password  for the user
+userdel user - remove the user
+
+how to check all the users in the  server ?
+cat /etc/passwd
+
+how to check all the group in the  server ?
+cat /etc/group
+
+groupadd group - create a new group
+
+how to PasswordAuthentication (Provide login access) to the users ?
+vi /etc/ssh/sshd_config
+ edit (PasswordAuthentication no to yes)
+systemctl restart sshd
+
+how to provide sudo access to the users?
+vi /etc/sudoers
+ add at EOF (user  ALL=(ALL)   ALL)
+
+
+Tasks
+1. How to provide password less sudo access to a user in linux?
+   vi /etc/sudoers
+   <user_name> ALL=(ALL)       NOPASSWD:ALL
+
+   
+2. How to provide sudo acces for user in linux to specific commands? (limited sudo access)
+   ex: user should be able to add users but not delete or anything else
+   execute (sudo useradd user)
+   lakshman ALL=(ALL)       /sbin/useradd
+
+To check the logs and audits    
+cat /var/spool/mail/root
+cat /var/log/audit/audit.log
+
+
+20th Mar, 2023
+
+Permissions & Ownerships
+
+drwxrwxr-x 2 anil anil  6 Mar 20 13:36 dir1
+
+
+drwxrwxr-x        2       shiva  shiva   6     Dec 31 02:22    dir1
+Permission    hardlink     ownerships   size    Time Stamp     Name
+
+
+                     (u)rwx (7)                (g)rwx (7)                (o)r-x (5) 
+              user owner permissions   group owner permissions  all other user permissions
+
+r (read)    - 4
+w (write)   - 2
+x (execute) - 1    
+
+
+getent group groupname (to check all the users in the group)
+cat /etc/passwd   (list out all the users)
+cat /etc/group    (list out all the groups) 
+chmod 777 item  (to alter the permissions)
+usermod -G group user (to add a user to group)
+usermod -aG group user (add user to a new group without exiting from any other group )
+usermod -g group user  (to change the default group of the user)
+chown user item (change the user owner)
+chgrp group item (change the group owner)
+chown uid/user:gid/group item 
+groups (which all group the current working user is available in)
+gpasswd -d user group (to remove a user from group)
+
+21st Mar, 2023
+
+Managing Applications
+
+Windows - .exe
+          .zip 
+
+
+Linux   - .rpm (redhat package managers)
+        - .zip/.jar/.tar
+        - binaries
+        - yum (yellowdog updater modified) - package manager in Redhat family
+          ex:- yum install/remove pkg
+ 
+          apt install/remove pkg (ubuntu, debian)  
+
+
+
+wget  - to download content from internet
+curl  - check url (to check th communication or availability)
+        along with -o option it is also capable of downloading content. 
+
+systemctl status pkg 
+systemctl start pkg
+systemctl stop pkg
+systemctl restart pkg
+systemctl enable pkg
+
+        before            after
+httpd   started  disbale  stopped 
+docker  started  enabled  started
+jenkins stopped  enabled  stopped 
+
+
+Cloning using ssh
+https://www.youtube.com/watch?v=CLkl40efxuA
+ssh-keygen -t rsa -f "name for key"
+
+
+Install Maven 
+https://www.tecmint.com/install-apache-maven-on-centos-7/
+
+
+
+
+
+

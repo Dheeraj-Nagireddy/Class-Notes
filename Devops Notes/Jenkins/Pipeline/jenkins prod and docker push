@@ -1,0 +1,56 @@
+pipeline {
+    agent any
+    stages {
+        stage('checkout') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Dheeraj-Nagireddy/cicd-pipeline-train-schedule-docker.git']]])
+            }
+        }
+        stage('build') {
+            steps {
+                echo 'building'
+                sh './gradlew build'
+                archiveArtifacts artifacts: 'dist/trainSchedule.zip'
+                
+            }
+        }
+        stage('Deploy to Prod') {
+            steps { //generate a ssh-keygen in jenkins server and copy it to production server
+                sh 'scp /root/.jenkins/workspace/sample/dist/trainSchedule.zip 172.31.89.112:~/trainSchedule.zip' //change the prod ip
+            }
+        }
+        stage('Build Image and Running') {
+            agent {
+                label 'production'
+            }
+            steps {
+                sh 'unzip -o ~/trainSchedule.zip -d ~/trainSchedule' //-o to overwrite the files -d to create a directory and paste the trainSchedule files
+                sh "docker build -t train_image:${env.BUILD_NUMBER} ~/trainSchedule/"
+                script {
+                    try {
+                        sh "docker stop train_app" //first build doesnot have train_app container running so placing this in try catch block
+                        sh "docker rm train_app"
+                    }
+                    catch (err) {
+                        echo "caught error: $err"
+                    }
+                }
+                sh "docker run -dit --name train_app -p 9000:8080 train_image:${env.BUILD_NUMBER}"
+            }
+        
+        }
+        stage('Pushing to Docker') {
+            agent {
+                label 'production'
+            }
+            steps {     //add credentials of docker hub in jenkins credentials with id dockerhub_login
+                withCredentials([usernamePassword(credentialsId: 'dockerhub_login', passwordVariable: 'dockerhub_password', usernameVariable: 'dockerhub_username')]) {
+                    sh "docker login -u ${env.dockerhub_username} -p ${env.dockerhub_password}"
+                    sh "docker commit train_app nagadheeraj/train_image:${env.BUILD_NUMBER}"
+                    sh "docker push nagadheeraj/train_image:${env.BUILD_NUMBER}"
+            }
+        
+            }
+        }
+    }
+}

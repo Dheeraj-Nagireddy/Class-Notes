@@ -1,0 +1,33 @@
+pipeline{
+agent {
+  label 'slave'
+}
+triggers {
+  pollSCM '* * * * *'
+}
+stages{
+stage('git')
+    {
+    steps{checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Dheeraj-Nagireddy/mavenrepo.git']])}        
+    }
+stage('build')
+{
+  steps{
+    sh 'mvn package'
+  }
+}
+
+}   
+}
+pipeline{
+agent{label 'label name'}
+triggers{
+  pollscm '*  ****'
+stages{
+stage('git')
+  {
+    steps{}
+  }
+}
+}
+}

@@ -1,0 +1,61 @@
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Running build automation'
+                sh './gradlew build --no-daemon'
+                archiveArtifacts artifacts: 'dist/trainSchedule.zip'
+            }
+        }
+        stage('Build Docker Image') {
+            when {
+                branch 'master'
+            }
+            steps {
+                script { //dockerhub used plugin for this course doesnot support declarative syntax so using script block
+                    app = docker.build("willbla/train-schedule") //provide dockerhub details
+                    app.inside {
+                        sh 'echo $(curl localhost:8080)'  // spinning up the image running this command inside the image to ensure the code change didnot break the build like a smoke test
+                    }
+                }
+            }
+        }
+        stage('Push Docker Image') {
+            when {
+                branch 'master'
+            }
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_login') { //docker_hub_login credentials are provided in global credentials already
+                        app.push("${env.BUILD_NUMBER}") //provides the build number primitive versioning
+                        app.push("latest") //tag latest 
+                    }
+                }
+            }
+        }
+        stage('DeployToProduction') {
+            when {
+                branch 'master'
+            }
+            steps {
+                input 'Deploy to Production?' //pauses and wait for human 
+                milestone(1)
+                withCredentials([usernamePassword(credentialsId: 'webserver_login', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) { //webserver_login which a user was created inside the production server and providing the credentials in global credentials
+                    script {//installing ssh pass package on jenkins server not a plugin which can  https://www.tecmint.com/sshpass-non-interactive-ssh-login-shell-script-ssh-password/
+                    //this package helps in automation of entering the login credentials inside command line below ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip is like ssh root@ipaddress
+                    //we declared the values of prod_ip in jenkins enviroment variables
+                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker pull willbla/train-schedule:${env.BUILD_NUMBER}\"" //prod_ip is the ip address of production server 
+                        try {
+                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker stop train-schedule\"" //stop old image
+                            sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker rm train-schedule\"" //remove old image
+                        } catch (err) {
+                            echo: 'caught error: $err'
+                        }
+                        sh "sshpass -p '$USERPASS' -v ssh -o StrictHostKeyChecking=no $USERNAME@$prod_ip \"docker run --restart always --name train-schedule -p 8080:8080 -d willbla/train-schedule:${env.BUILD_NUMBER}\"" //running the new image
+                    }
+                }
+            }
+        }
+    }
+}

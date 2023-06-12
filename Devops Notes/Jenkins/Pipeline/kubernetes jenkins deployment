@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+    stages {
+        stage('checkout') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Dheeraj-Nagireddy/cicd-pipeline-train-schedule-docker.git']]])
+            }
+        }
+        stage('build') {
+            steps {
+                echo 'building'
+                sh './gradlew build'
+                archiveArtifacts artifacts: 'dist/trainSchedule.zip'
+                
+            }
+        }
+        stage('Build Image and Running') {
+            steps {
+                sh "docker build -t train_image:${env.BUILD_NUMBER} ."
+                script {
+                    try {
+                        sh "docker stop train_app" //first build doesnot have train_app container running so placing this in try catch block
+                        sh "docker rm train_app"
+                    }
+                    catch (err) {
+                        echo "caught error: $err"
+                    }
+                }
+                sh "docker run -dit --name train_app -p 9000:8080 train_image:${env.BUILD_NUMBER}"
+            }
+        
+        }
+        stage('Pushing to Docker') {
+            steps {     //add credentials of docker hub in jenkins credentials with id dockerhub_login
+                withCredentials([usernamePassword(credentialsId: 'dockerhub_login', passwordVariable: 'dockerhub_password', usernameVariable: 'dockerhub_username')]) 
+                {
+                    sh "docker login -u ${env.dockerhub_username} -p ${env.dockerhub_password}"
+                    sh "docker commit train_app nagadheeraj/train_image:${env.BUILD_NUMBER}"
+                    sh "docker push nagadheeraj/train_image:${env.BUILD_NUMBER}"
+                }
+            }
+        }
+        stage ('deploy to k8') {
+        steps {
+            sh "sed 's/tagVersion/${env.BUILD_NUMBER}/g' train_app.yml > versioned_train_app.yml"
+            sshagent(['jenkins_id_rsa']) {
+                sh 'scp -o StrictHostKeyChecking=no versioned_train_app.yml root@172.31.93.226:~' 
+                sh 'ssh root@172.31.93.226 kubectl create -f versioned_train_app.yml'
+            }
+        }
+            
+        }
+    }
+}
